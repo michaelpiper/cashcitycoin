@@ -1,0 +1,13 @@
+import express from "express";
+import expressBasicAuth from "express-basic-auth";
+import accountRouter from "./router/account";
+import transactionRouter from "./router/transaction";
+import miningRouter from "./router/mining";
+import ledgerRouter from "./router/ledger";
+import { basicAuthObject} from "../libs/auth";
+const router = express.Router();
+router.use("/account", accountRouter);
+router.use("/transaction",expressBasicAuth( basicAuthObject ), transactionRouter);
+router.use("/mining",expressBasicAuth( basicAuthObject ), miningRouter);
+router.use("/ledger",expressBasicAuth( basicAuthObject ), ledgerRouter);
+export default router;
