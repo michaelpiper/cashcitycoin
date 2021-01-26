@@ -67,7 +67,7 @@ export default class MiningController{
                 return res.status(400).json({message:"transaction not verified"});
             }
             await transaction.setCompleted();
-            if(transaction.sender==="SYSTEM"){
+            if(transaction.sender!=="SYSTEM"){
                 const bAmount=(transaction.amount/100)*0.5;
                 const bonus = await Transaction.create({
                     sender:"SYSTEM",
@@ -75,12 +75,11 @@ export default class MiningController{
                     amount: bAmount>1?1:bAmount,
                 });
                
-                await bonus.setCompleted();
-                return res.json({
-                   message:"Transaction completed"
-                });
+                await bonus.setCompleted();  
             }
-
+            return res.json({
+                message:"Transaction completed"
+             });
         }catch(e){
             await transaction.setFailed();
             Logger.info("transaction error",e);
