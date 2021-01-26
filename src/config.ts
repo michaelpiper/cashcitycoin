@@ -20,6 +20,6 @@ export const MONGO_DB_URI = process.env['MONGO_DB_URI']||"mongodb://localhost:27
 
 export const Redis ={
     PORT: undefined,
-    HOST: "127.0.0.1",
+    HOST: undefined,
     AUTH: undefined
 }

@@ -1,2 +1,2 @@
-export { RedisAdapter } from "./redis";
+// export { RedisAdapter } from "./redis";
 export { MongooseAdapter } from "./mongoose";
