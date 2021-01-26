@@ -24,7 +24,7 @@ export default class MiningController{
        if(!req.body.nonce){
         return res.status(400).json({message:"nonce required"});
        }
-       if(req.body.previous_hash==undefined){
+       if(req.body.previous_hash===undefined){
         return res.status(400).json({message:"previous_hash required"});
        }
        if(!_transaction){
@@ -66,17 +66,21 @@ export default class MiningController{
                 await transaction.setPending();
                 return res.status(400).json({message:"transaction not verified"});
             }
-            const bAmount=(transaction.amount/100)*0.5;
-            const bonus = await Transaction.create({
-                sender:"SYSTEM",
-                recipient: wallet.walletId,
-                amount: bAmount>1?1:bAmount,
-            });
             await transaction.setCompleted();
-            await bonus.setCompleted();
-            return res.json({
-               message:"Transaction completed"
-            });
+            if(transaction.sender==="SYSTEM"){
+                const bAmount=(transaction.amount/100)*0.5;
+                const bonus = await Transaction.create({
+                    sender:"SYSTEM",
+                    recipient: wallet.walletId,
+                    amount: bAmount>1?1:bAmount,
+                });
+               
+                await bonus.setCompleted();
+                return res.json({
+                   message:"Transaction completed"
+                });
+            }
+
         }catch(e){
             await transaction.setFailed();
             Logger.info("transaction error",e);
