@@ -51,7 +51,7 @@ export default class MiningController{
         }
         try{
             const chain = await lastChain();
-            if((chain && chain.hash !== req.body.previous_hash) || req.body.previous_hash !== null){
+            if((chain && chain.hash !== req.body.previous_hash) || req.body.previous_hash !== chain){
                 return res.status(400).json({message:"transaction previous hash failed"}); 
             }
             await transaction.setVerifying();
