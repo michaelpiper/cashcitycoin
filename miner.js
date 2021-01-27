@@ -1,12 +1,18 @@
 const axios = require('axios').default;
 const findConfig=()=>{
-    if(process.argv.find((argv)=>argv==="-dev")){
-        return require("./miner-dev.json");
+    try{
+        if(process.argv.find((argv)=>argv==="-dev")){
+            return require("./miner-dev.json");
+        }
+        if(process.argv.find((argv)=>argv==="-sandbox")){
+            return require("./miner-sandbox.json");
+        }
+        return require("./miner.json");
+    }catch(e){
+        console.error(e);
+        return {};
     }
-    if(process.argv.find((argv)=>argv==="-sandbox")){
-        return require("./miner-sandbox.json");
-    }
-    return require("./miner.json");   
+      
 }
 const config = findConfig();
 const BASE_URL = config.WALLET_URL;
