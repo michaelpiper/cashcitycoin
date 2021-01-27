@@ -34,3 +34,5 @@ application/
 .env
 **/private/*
 **/public/*
+
+miner**.json

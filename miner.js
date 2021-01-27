@@ -1,13 +1,18 @@
 const axios = require('axios').default;
-const crypto = require("crypto");
-const BASE_URL="https://cashcitycoin-sandbox.herokuapp.com";
-// const user = {
-//     wallet_id:"BGBBEIEHEJBEGBBIJ",
-//     password:"GZ#99R1Y0SUPHH15&O%0G5NE9GTUQVBX"
-// }
+const findConfig=()=>{
+    if(process.argv.find((argv)=>argv==="-dev")){
+        return require("./miner-dev.json");
+    }
+    if(process.argv.find((argv)=>argv==="-sandbox")){
+        return require("./miner-sandbox.json");
+    }
+    return require("./miner.json");   
+}
+const config = findConfig();
+const BASE_URL = config.WALLET_URL;
 const user = {
-    wallet_id:"BGBBGJGIEABHEEAXL",
-    password:"@YWQJNFVC%TXR@8KOQTZQ20AA1L14$Z@"
+    wallet_id: config.WALLET_ID,
+    password: config.WALLET_PASS
 }
 let submitted =false;
 const getNonce =async()=>{
