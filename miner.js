@@ -14,82 +14,85 @@ const findConfig=()=>{
     }
       
 }
-const config = findConfig();
-const BASE_URL = config.WALLET_URL;
-const user = {
-    wallet_id: config.WALLET_ID,
-    password: config.WALLET_PASS
+class Sdk {
+    constructor (baseUrl="", user={}){
+        this.baseUrl = baseUrl;
+        this.user = user;
+    }
+    async getNonce (){
+        return await axios.get(this.baseUrl+"/mining/nonce",{
+            headers:{
+                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+            }
+        }).catch((res)=>console.log(res.response?res.toJSON():res.message));
+    }
+    async getPreviousHash(){
+        return await axios.get(this.baseUrl+"/mining/previous_hash",{
+            headers:{
+                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+            }
+        }).catch((res)=>console.log(res.response?res.toJSON():res.message));
+    }
+    async getPendingTransaction(){
+        return await axios.get(this.baseUrl+"/mining",{
+            headers:{
+                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+            }
+        }).catch((res)=>console.log(res.response?`
+        getPendingTransaction
+        status:     ${res.response.status},
+        statusText: ${res.response.statusText},
+        data:       ${JSON.stringify(res.response.data||null)}
+        `:res.message));
+    }
+    async verifyPendingTransaction(transaction){
+        const nonce = await this.getNonce();
+        const previous_hash = await this.getPreviousHash();
+        return await axios.post(this.baseUrl+"/mining",{
+            transaction,
+            nonce: nonce.data,
+            previous_hash:previous_hash.data
+        },{
+            headers:{
+                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+            }
+        }).catch((res)=>console.log(res.response?`
+        verifyPendingTransaction
+        nonce:         ${nonce.data},
+        previous_hash: ${previous_hash.data},
+        transaction:   ${JSON.stringify(transaction)},
+        status:        ${res.response.status},
+        statusText:    ${res.response.statusText},
+        data:          ${JSON.stringify(res.response.data||null)}
+        `:res.message));
+    }
+    
+    genNonce (){
+        let string ="";
+        for (let i =0;i<3;i++){
+            string+= Math.floor(Math.random()*9);
+        }
+        return string;
+    }
 }
 let submitted =false;
-const getNonce =async()=>{
-    return await axios.get(BASE_URL+"/mining/nonce",{
-        headers:{
-            "Authorization":"Basic "+Buffer.from(`${user.wallet_id}:${user.password}`).toString("base64")
-        }
-    }).catch((res)=>console.log(res.response?res.toJSON():res.message));
-}
-const getPreviousHash =async()=>{
-    return await axios.get(BASE_URL+"/mining/previous_hash",{
-        headers:{
-            "Authorization":"Basic "+Buffer.from(`${user.wallet_id}:${user.password}`).toString("base64")
-        }
-    }).catch((res)=>console.log(res.response?res.toJSON():res.message));
-}
-const getPendingTransaction=async()=>{
-    return await axios.get(BASE_URL+"/mining",{
-        headers:{
-            "Authorization":"Basic "+Buffer.from(`${user.wallet_id}:${user.password}`).toString("base64")
-        }
-    }).catch((res)=>console.log(res.response?`
-    getPendingTransaction
-    status:     ${res.response.status},
-    statusText: ${res.response.statusText},
-    data:       ${JSON.stringify(res.response.data||null)}
-    `:res.message));
-}
-const verifyPendingTransaction=async(transaction)=>{
-    const nonce = await getNonce();
-    const previous_hash = await getPreviousHash();
-    return await axios.post(BASE_URL+"/mining",{
-        transaction,
-        nonce: nonce.data,
-        previous_hash:previous_hash.data
-    },{
-        headers:{
-            "Authorization":"Basic "+Buffer.from(`${user.wallet_id}:${user.password}`).toString("base64")
-        }
-    }).catch((res)=>console.log(res.response?`
-    verifyPendingTransaction
-    nonce:         ${nonce.data},
-    previous_hash: ${previous_hash.data},
-    transaction:   ${JSON.stringify(transaction)},
-    status:        ${res.response.status},
-    statusText:    ${res.response.statusText},
-    data:          ${JSON.stringify(res.response.data||null)}
-    `:res.message));
-}
+const config = findConfig();
+const SDK = new Sdk(config.WALLET_URL,{
+    wallet_id: config.WALLET_ID,
+    password: config.WALLET_PASS
+});
 const main = async ()=>{
     submitted = true;
     try{
-        const transaction = await getPendingTransaction();
+        const transaction = await SDK.getPendingTransaction();
         if(transaction && transaction.data)
-        await  verifyPendingTransaction(transaction.data);
+        await  SDK.verifyPendingTransaction(transaction.data);
         submitted = false;
     }catch(e){
         console.log(e);
         submitted = false;
     }
-   
-  
 }
-const genNonce =()=>{
-    let string ="";
-    for (let i =0;i<3;i++){
-        string+= Math.floor(Math.random()*9);
-    }
-    return string;
-}
-
 setInterval(()=>{
     if(submitted) return;
     main();
