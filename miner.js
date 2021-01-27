@@ -45,26 +45,43 @@ class Sdk {
         data:       ${JSON.stringify(res.response.data||null)}
         `:res.message));
     }
-    async verifyPendingTransaction(transaction){
-        const nonce = await this.getNonce();
-        const previous_hash = await this.getPreviousHash();
-        return await axios.post(this.baseUrl+"/mining",{
-            transaction,
-            nonce: nonce.data,
-            previous_hash:previous_hash.data
-        },{
-            headers:{
-                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
-            }
-        }).catch((res)=>console.log(res.response?`
-        verifyPendingTransaction
-        nonce:         ${nonce.data},
-        previous_hash: ${previous_hash.data},
-        transaction:   ${JSON.stringify(transaction)},
-        status:        ${res.response.status},
-        statusText:    ${res.response.statusText},
-        data:          ${JSON.stringify(res.response.data||null)}
-        `:res.message));
+    verifyPendingTransaction(transaction){
+        return new Promise((resolve)=>{
+            (async()=>{
+                while(true){
+                    const nonce = await this.getNonce();
+                    const previous_hash = await this.getPreviousHash();
+                    try{
+                        const res = await axios.post(this.baseUrl+"/mining",{
+                                transaction,
+                                nonce: nonce.data,
+                                previous_hash:previous_hash.data
+                            },
+                            {
+                                headers:{
+                                    "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+                                }
+                        })
+                        return resolve(res);
+                    }
+                    catch(res){
+                        console.log(
+                        res.response?`
+                        verifyPendingTransaction
+                        nonce:         ${nonce.data},
+                        previous_hash: ${previous_hash.data},
+                        transaction:   ${JSON.stringify(transaction)},
+                        status:        ${res.response.status},
+                        statusText:    ${res.response.statusText},
+                        data:          ${JSON.stringify(res.response.data||null)}
+                        `:res.message)
+                        if(res.response && res.response.status===404){
+                            return resolve();
+                        }
+                    }
+                }
+            })()
+        })
     }
     
     genNonce (){
