@@ -12,6 +12,8 @@ export class TransactionSchema extends TimeStamps {
 	recipient!: string;
 	@Prop({ required: true })
     amount!: number;
+    @Prop({ required: false, default:"", uppercase:true})
+    narration = "";
     @Prop({ required: false, default:TransactionStatus.PENDING, enum:TransactionStatus })
     status?:TransactionStatus = TransactionStatus.PENDING;
     @Prop({ required: false,default:TransactionSchema.genNonce })

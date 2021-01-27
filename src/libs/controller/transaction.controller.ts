@@ -22,6 +22,11 @@ export default class TransactionController{
                 message:"amount invalid",
             });  
         }
+        if(req.body.narration && String(req.body.narration).length>255 ){
+            return res.status(422).json({
+                message:"narration too long",
+            });  
+        }
         const auth  = (req as IBasicAuthedRequest).auth;
         const sender = await Account.findOne({walletId:auth.user}) as DocumentType<AccountSchema>; 
         const recipient = await Account.findOne({walletId:req.body.recipient}); 
@@ -47,6 +52,7 @@ export default class TransactionController{
             sender:sender.walletId,
             recipient:req.body.recipient,
             amount:req.body.amount,
+            narration:req.body.narration || ""
         });
         return res.json({
             transaction_id: transaction.id,
