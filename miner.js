@@ -1,10 +1,10 @@
 const axios = require('axios').default;
 const findConfig=()=>{
     try{
-        if(process.argv.find((argv)=>argv==="-dev")){
+        if(process.argv.find((argv)=>argv==="--dev")){
             return require("./miner-dev.json");
         }
-        if(process.argv.find((argv)=>argv==="-sandbox")){
+        if(process.argv.find((argv)=>argv==="--sandbox")){
             return require("./miner-sandbox.json");
         }
         return require("./miner.json");
