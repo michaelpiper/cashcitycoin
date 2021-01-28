@@ -4,6 +4,18 @@ import { IBasicAuthedRequest } from "express-basic-auth";
 // import { Logger } from "../../libs/logger";
 import { Account, AccountSchema } from "../../models/account";
 export default class AccountController{
+    static async findWallet(req:Request,res:Response):Promise<unknown>{
+        const wallet_id = req.params.id;
+        const wallet = await Account.findOne({walletId:wallet_id});
+        if(wallet===null){
+            res.status(404).json({
+                message:"Wallet not found"
+            });
+        }
+        return res.json({
+           message:"Wallet exist"
+        });
+    }
     static async generate(req:Request,res:Response):Promise<unknown>{
         const wallet_id = AccountSchema.generateId();
         const password = AccountSchema.generatePass();

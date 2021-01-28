@@ -8,6 +8,7 @@ import { TransactionStatus } from "../../libs/enum";
 import { Logger } from "../../libs/logger";
 import { isValidObjectId } from "mongoose";
 import { lastChain } from "../../models/chain";
+import { transactionMiningBonus } from "../../libs/utils";
 export default class MiningController{
     static async previousHash(req:Request,res:Response):Promise<unknown>{
         const chain = await lastChain();
@@ -22,13 +23,13 @@ export default class MiningController{
     static async verifyTransaction(req:Request,res:Response):Promise<unknown>{
        const _transaction = req.body.transaction;
        if(!req.body.nonce){
-        return res.status(400).json({message:"nonce required"});
+        return res.status(422).json({message:"nonce required"});
        }
        if(req.body.previous_hash===undefined){
-        return res.status(400).json({message:"previous_hash required"});
+        return res.status(422).json({message:"previous_hash required"});
        }
        if(!_transaction){
-        return res.status(400).json({message:"transaction required"});
+        return res.status(422).json({message:"transaction required"});
        }
        if(!isValidObjectId(_transaction.id))  return res.status(422).json({message:"invalid transaction id"});
         if(await verifyingTransaction()!==null){
@@ -68,11 +69,12 @@ export default class MiningController{
             }
             await transaction.setCompleted();
             if(transaction.sender!=="SYSTEM"){
-                const bAmount=(transaction.amount/100)*0.5;
+                const bAmount=transactionMiningBonus(transaction.amount);
                 const bonus = await Transaction.create({
                     sender:"SYSTEM",
                     recipient: wallet.walletId,
-                    amount: bAmount>1?1:bAmount,
+                    amount: bAmount,
+                    narration:`SYSTEM|${transaction.id}|${bAmount}`
                 });
                
                 await bonus.setCompleted();  

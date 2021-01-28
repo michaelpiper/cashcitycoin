@@ -1,4 +1,11 @@
 import { Request } from "express";
+
+export const transactionMiningBonus = (amount:number):number=>{
+    const bAmount=(amount/100)*0.5;
+    if(bAmount>1)
+    return 1;
+    return bAmount;
+}
 export const getPageFromReq=(req:Request):number=>{
     let page;
     try{
