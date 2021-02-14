@@ -63,17 +63,15 @@ export default class MiningController{
                 return res.status(400).json({message:"transaction verify failed"});
             }
             Logger.info(`transaction nonce ${req.body.nonce}=>${transaction.nonce}`);
-            if(!transaction.verifyNonce(req.body.nonce)){
-                await transaction.setPending();
+            if(!await transaction.verifyNonce(req.body.nonce)){
                 return res.status(400).json({message:"transaction not verified"});
             }
-            await transaction.setCompleted();
             if(transaction.sender!=="SYSTEM"){
-                await miningReward(wallet,transaction);  
+                await miningReward(wallet, transaction);  
             }
             return res.json({
                 message:"Transaction completed"
-             });
+            });
         }catch(e){
             await transaction.setFailed();
             Logger.info("transaction error",e);

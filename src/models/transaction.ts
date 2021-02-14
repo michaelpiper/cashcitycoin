@@ -18,7 +18,7 @@ export class TransactionSchema extends TimeStamps {
     status?:TransactionStatus = TransactionStatus.PENDING;
     @Prop({ required: false,default:TransactionSchema.genNonce })
     nonce?:string|null = null;
-
+    proof?:string|null = null
     static getNonce():string{
         let string ="";
         for (let i =0;i<2;i++){
@@ -32,10 +32,16 @@ export class TransactionSchema extends TimeStamps {
     static getHash(val:string):string{
         return crypto.createHash("md5").update(val).digest("hex")
     }
-    verifyNonce(nonce: string):boolean{
-        nonce = TransactionSchema.getHash(nonce);
+    async verifyNonce(nonce: string):Promise<boolean>{
+        const hashNonce = TransactionSchema.getHash(nonce);
         if(this.nonce===null|| this.nonce===undefined) return false;
-        return this.nonce===nonce;
+        if(this.nonce!==hashNonce){
+            await this.setPending();
+            return false;
+        }
+        this.proof = nonce;
+        await this.setCompleted();
+        return true;
     }
     async setStatus(status: TransactionStatus):Promise<void>{
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
