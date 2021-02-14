@@ -8,7 +8,7 @@ import { TransactionStatus } from "../../libs/enum";
 import { Logger } from "../../libs/logger";
 import { isValidObjectId } from "mongoose";
 import { lastChain } from "../../models/chain";
-import { transactionMiningBonus } from "../../libs/utils";
+import { miningReward } from "../../libs/utils";
 export default class MiningController{
     static async previousHash(req:Request,res:Response):Promise<unknown>{
         const chain = await lastChain();
@@ -69,15 +69,7 @@ export default class MiningController{
             }
             await transaction.setCompleted();
             if(transaction.sender!=="SYSTEM"){
-                const bAmount=transactionMiningBonus(transaction.amount);
-                const bonus = await Transaction.create({
-                    sender:"SYSTEM",
-                    recipient: wallet.walletId,
-                    amount: bAmount,
-                    narration:`SYSTEM|${transaction.id}|${bAmount}`
-                });
-               
-                await bonus.setCompleted();  
+                await miningReward(wallet,transaction);  
             }
             return res.json({
                 message:"Transaction completed"

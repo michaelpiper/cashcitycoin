@@ -22,7 +22,7 @@ export default class LedgerController{
     protected static purifyLedger(chain:ChainDocType):Record<string,unknown>{
         return {
             id:chain._id,
-            chain:chain.block,
+            block:chain.block,
             previous_hash:chain.previousHash,
             created_at:chain.createdAt,
             updated_at:chain.updatedAt,

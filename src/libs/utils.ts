@@ -1,5 +1,17 @@
 import { Request } from "express";
-
+import { Transaction, TransactionDocType } from "../models/transaction";
+import { AccountDocType } from "../models/account";
+export const miningReward=async (wallet:AccountDocType,transaction:TransactionDocType):Promise<TransactionDocType>=>{
+    const bAmount=transactionMiningBonus(transaction.amount);
+    const bonus = await Transaction.create({
+        sender:"SYSTEM",
+        recipient: wallet.walletId,
+        amount: bAmount,
+        narration:`SYSTEM|${transaction.id}|${bAmount}`
+    });
+    await bonus.setCompleted();
+    return bonus;
+}
 export const transactionMiningBonus = (amount:number):number=>{
     const bAmount=(amount/100)*0.5;
     if(bAmount>1)

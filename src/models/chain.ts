@@ -3,10 +3,14 @@ import { MongooseAdapter } from "../libs/connections";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 import * as crypto from "crypto";
 import { TransactionSchema } from "./transaction";
-// import { Logger } from "../libs/logger";
 import { TransactionStatus } from "../libs/enum";
 import { ObjectId } from "mongodb";
 class BlockChain{
+    constructor(sender:string, recipient:string, amount:number){
+        this.sender = sender;
+        this.recipient = recipient;
+        this.amount =  amount;
+    }
     @Prop({ required: true})
     sender!:string;
     @Prop({ required: true})
@@ -18,7 +22,7 @@ export class ChainSchema extends TimeStamps {
 	@Prop({ default:null})
 	previousHash!: string|null;
 	@Prop({ required: false,type:Array,_id:false})
-    block: BlockChain[]=[];
+    block!: BlockChain;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get json ():Record<string,any>{
         return{
@@ -51,27 +55,12 @@ export const allChain = async(page=1,limit=50):Promise<DocumentType<ChainSchema>
 }
 export const addTransactionToChain=async (transaction:TransactionSchema):Promise<void>=>{
     if(transaction.status!==TransactionStatus.COMPLETED)return;
-    let chain = await lastChain();
-    if(chain===null){
-        chain = await Chain.create({
-            previousHash:null,
-            block:[]
-        });
-    }
-    if(chain.block.length===20){
-        chain = await Chain.create({
-            previousHash:chain.hash,
-            block:[]
-        });
-    }
-    const blockchain = new BlockChain()
-    blockchain.amount = transaction.amount;
-    blockchain.recipient = transaction.recipient;
-    blockchain.sender = transaction.sender;
-    chain.block.push(blockchain);
+    const prevChain = await lastChain();
+    const block = new BlockChain(transaction.sender, transaction.recipient, transaction.amount);
+    const previousHash = (prevChain===null)?null:prevChain.hash;
+    const chain = await Chain.create({previousHash,block});
     await chain.save();
     return; 
-    
 }
 export type ChainModelType = ReturnModelType<typeof ChainSchema>;
 export type ChainDocType = DocumentType<ChainSchema>;
