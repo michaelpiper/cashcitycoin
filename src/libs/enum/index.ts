@@ -9,3 +9,9 @@ export enum TransactionStatus{
     VERIFYING = "verifying",
     COMPLETED ="completed",
 }
+
+export enum MiningStatus{
+    PENDING="pending",
+    FAILED ="failed",
+    COMPLETED ="completed",
+}

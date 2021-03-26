@@ -45,6 +45,7 @@
     "@types/redis": "^2.8.28",
     "@types/uuid": "^8.3.0",
     "@types/websocket": "^1.0.1",
+    "api-key-auth": "^0.2.3",
     "axios": "^0.21.0",
     "bcrypt": "^5.0.0",
     "cookie-parser": "^1.4.5",

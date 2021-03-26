@@ -4,11 +4,11 @@ import { IBasicAuthedRequest } from "express-basic-auth";
 import { Transaction, verifyingTransaction } from "../../models/transaction";
 // import { Logger } from "../../libs/logger";
 import { Account, AccountSchema } from "../../models/account";
-import { TransactionStatus } from "../../libs/enum";
-import { Logger } from "../../libs/logger";
+import { TransactionStatus } from "../enum";
+import { Logger } from "../logger";
 import { isValidObjectId } from "mongoose";
 import { lastChain } from "../../models/chain";
-import { miningReward } from "../../libs/utils";
+import { miningReward } from "../utils";
 export default class MiningController{
     static async previousHash(req:Request,res:Response):Promise<unknown>{
         const chain = await lastChain();

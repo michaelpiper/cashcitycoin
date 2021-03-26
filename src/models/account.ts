@@ -2,6 +2,7 @@ import { Prop, getModelForClass, ReturnModelType, DocumentType } from "@typegoos
 import { MongooseAdapter } from "../libs/connections";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 import bcrypt from "bcrypt";
+import * as crypto from "crypto";
 import { Transaction } from "./transaction";
 // import { Logger } from "../libs/logger";
 import { TransactionStatus } from "../libs/enum";
@@ -11,8 +12,20 @@ export class AccountSchema extends TimeStamps {
 
 	@Prop({ required: false,get:(val:string)=>val, set: AccountSchema.encryptPassword})
     password!: string;
+    @Prop({ required: false,default:null})
+    apiKey!: string|null;
+    @Prop({ required: false,default:""})
+    apiSecret!: string;
+    @Prop({ required: false,default:false})
+    cooperator!: boolean;
     verifyPass(password: string):boolean{
         return bcrypt.compareSync(password,this.password);
+    }
+    generateHash(s:string):string|null{
+        if(!this.apiSecret){
+            return null;
+        }
+        return crypto.createHmac("sha256",this.apiSecret).update(s).digest("hex");
     }
     get balance (): Promise<number>{
         return new Promise((resolve)=>{
@@ -81,7 +94,10 @@ export class AccountSchema extends TimeStamps {
     static async generate(walletId:string,password:string):Promise<AccountDocType>{
         return await Account.create({
             password,
-            walletId
+            walletId,
+            apiKey: null,
+            apiSecret: "",
+            cooperator:false
         });
     }
 }
@@ -92,6 +108,16 @@ export const Account = getModelForClass(AccountSchema, {
 		collection: "account",
 	},
 });
-
+export const findAccountByWalletId = async (walletId:string):Promise<DocumentType<AccountSchema> | null>=>{
+    return  await Account.findOne({
+        walletId
+    })
+}
+export const findAccountByApiKey = async ( apiKey:string):Promise<DocumentType<AccountSchema> | null>=>{
+    return  await Account.findOne({
+        apiKey,
+        cooperator: true
+    })
+}
 export type AccountModelType = ReturnModelType<typeof AccountSchema>;
 export type AccountDocType = DocumentType<AccountSchema>;

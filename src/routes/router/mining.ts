@@ -1,5 +1,5 @@
 import express from "express";
-import MiningController from "../../libs/controller/mining.contoller";
+import MiningController from "../../libs/controller/mining.controller";
 const router = express.Router();
 router.get("",MiningController.getPendingTransaction);
 router.get("/all",MiningController.getPendingTransactions);

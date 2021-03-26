@@ -21,7 +21,7 @@ class BlockChain{
 export class ChainSchema extends TimeStamps {
 	@Prop({ default:null})
 	previousHash!: string|null;
-	@Prop({ required: false,type:Array,_id:false})
+	@Prop({ required: false,_id:false})
     block!: BlockChain;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get json ():Record<string,any>{

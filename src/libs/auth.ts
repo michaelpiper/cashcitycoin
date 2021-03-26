@@ -1,7 +1,9 @@
+import { DocumentType } from "@typegoose/typegoose";
 import { IAsyncAuthorizerOptions } from "express-basic-auth";
 
 type cbFunction = (err:string|null,result?:boolean)=>unknown;
-import {  Account } from "../models/account";
+import {  Account, AccountSchema, findAccountByApiKey } from "../models/account";
+import { sha256 } from "./utils";
 export const authorizer=async (username:string,password:string,cb:cbFunction):Promise<unknown>=>{
     const wallet = await Account.findOne({walletId:username});
     if(wallet===null){
@@ -13,3 +15,12 @@ export const authorizer=async (username:string,password:string,cb:cbFunction):Pr
     return cb(null,true);
 }
 export const basicAuthObject:IAsyncAuthorizerOptions = { authorizer, authorizeAsync:true};
+
+export const getApiKeySecret=async (keyId:string, done:(e:Error|null,s?:string,r?:DocumentType<AccountSchema>)=>void):Promise<void>=> {
+    const account = await findAccountByApiKey(sha256(keyId));
+    if (!account) {
+      return done(new Error('Unknown api key'));
+    }
+   
+    done(null, account.apiSecret, account);
+}

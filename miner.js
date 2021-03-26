@@ -18,25 +18,26 @@ class Sdk {
     constructor (baseUrl="", user={}){
         this.baseUrl = baseUrl;
         this.user = user;
+        this.auth = Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
     }
     async getNonce (){
         return await axios.get(this.baseUrl+"/mining/nonce",{
             headers:{
-                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+                "Authorization":"Basic "+this.auth
             }
         }).catch((res)=>console.log(res.response?res.toJSON():res.message));
     }
     async getPreviousHash(){
         return await axios.get(this.baseUrl+"/mining/previous_hash",{
             headers:{
-                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+                "Authorization":"Basic "+this.auth
             }
         }).catch((res)=>console.log(res.response?res.toJSON():res.message));
     }
     async getPendingTransaction(){
         return await axios.get(this.baseUrl+"/mining",{
             headers:{
-                "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+                "Authorization":"Basic "+this.auth
             }
         }).catch((res)=>console.log(res.response?`
         getPendingTransaction

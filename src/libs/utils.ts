@@ -1,21 +1,90 @@
 import { Request } from "express";
 import { Transaction, TransactionDocType } from "../models/transaction";
 import { AccountDocType } from "../models/account";
-export const miningReward=async (wallet:AccountDocType,transaction:TransactionDocType):Promise<TransactionDocType>=>{
-    const bAmount=transactionMiningBonus(transaction.amount);
+import { MiningDocType } from "../models/mining";
+import * as crypto from "crypto";
+export const sha256 = (value:string): string => crypto.createHash("sha256").update(value).digest("hex");
+export const cooporatorReward=async (mining: MiningDocType):Promise<Record<string,TransactionDocType>>=>{
+    let cbonus, sbonus, transaction;
+    const cooperatorBonusAmount = cooperatorBonus(mining.amount);
+    const sourceBonusAmount = sourceBonus(mining.amount);
+    const amount = mining.amount;
+    const querys = {
+        cbonus:{
+            sender: "SYSTEM",
+            recipient: mining.cooperator,
+            amount: cooperatorBonusAmount,
+            narration:`SYSTEM|M-${mining.id}|C-${cooperatorBonusAmount}`
+        },
+        sbonus:{
+            sender: "SYSTEM",
+            recipient: mining.miner,
+            amount: sourceBonusAmount,
+            narration:`SYSTEM|M-${mining.id}|M-${sourceBonusAmount}`
+        },
+        transaction:{
+            sender: "SYSTEM",
+            recipient: mining.consumer,
+            amount: amount,
+            narration:`SYSTEM|M-${mining.id}|T-${amount}`
+        },
+    }
+    cbonus = await Transaction.findOne(querys.cbonus);
+    sbonus = await Transaction.findOne(querys.sbonus);
+    transaction = await Transaction.findOne(querys.transaction);
+    if(cbonus===null){
+        cbonus = await Transaction.create(querys.cbonus);
+    }
+    if(sbonus===null){
+        sbonus = await Transaction.create(querys.sbonus);
+    }
+    if(transaction===null){
+        transaction = await Transaction.create(querys.transaction);
+    }
+    return {cooperatorBonus:cbonus,minerBonus:sbonus,transaction};
+}
+export const miningReward=async (miner:AccountDocType,transaction:TransactionDocType):Promise<TransactionDocType>=>{
+    const bAmount = transactionMiningBonus(transaction.amount);
     const bonus = await Transaction.create({
-        sender:"SYSTEM",
-        recipient: wallet.walletId,
+        sender: transaction.sender,
+        recipient: miner.walletId,
         amount: bAmount,
-        narration:`SYSTEM|${transaction.id}|${bAmount}`
+        narration:`SYSTEM-MINING-COST|T-${transaction.id}|M-${bAmount}`
     });
     await bonus.setCompleted();
     return bonus;
 }
 export const transactionMiningBonus = (amount:number):number=>{
-    const bAmount=(amount/100)*0.5;
-    if(bAmount>1)
+    if(amount>4000000){
+        return (amount/100)*0.5;
+    }
+    if(amount>4000000){
+        return 40.5;
+    }
+    if(amount>3000000){
+        return 30.5;
+    }
+    if(amount>2000000){
+        return 20.5;
+    }
+    if(amount>200000){
+        return 2.5;
+    }
+    if(amount>20000){
+        return 1.5;
+    }
+    if(amount>2000){
+        return 1.2;
+    }
     return 1;
+}
+export const cooperatorBonus = (amount:number):number=>{
+    const bAmount=(amount/100)*1;
+   
+    return bAmount;
+}
+export const sourceBonus = (amount:number):number=>{
+    const bAmount=(amount/100)*4;
     return bAmount;
 }
 export const getPageFromReq=(req:Request):number=>{
