@@ -3,7 +3,10 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./application",
-    "removeComments": true
+    "removeComments": true,
+    "paths": {
+			"*": ["types/*"]
+		} 
   },
   "include": [
     "src/**/*"
