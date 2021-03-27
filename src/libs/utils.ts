@@ -77,6 +77,9 @@ export const transactionMiningBonus = (amount:number):number=>{
     if(amount>2000){
         return 1.2;
     }
+    if(amount>100){
+        return 1;
+    }
     return (amount/100)*1;
 }
 export const cooperatorBonus = (amount:number):number=>{
