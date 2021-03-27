@@ -1,5 +1,5 @@
 import { DocumentType } from "@typegoose/typegoose";
-import {Request,Response } from "express";
+import { Request, Response } from "express";
 import { IBasicAuthedRequest } from "express-basic-auth";
 import { Transaction, verifyingTransaction } from "../../models/transaction";
 // import { Logger } from "../../libs/logger";

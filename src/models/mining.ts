@@ -18,7 +18,7 @@ export class MiningSchema extends TimeStamps {
 	cooperator!: string;
     @Prop({ required: true })
 	consumer!: string;
-    @Prop({ required: false, default:null })
+    @Prop({ required: false, type:String, default:null })
     narration:string|null=null;
     @Prop({ required: false })
     payId?: string;

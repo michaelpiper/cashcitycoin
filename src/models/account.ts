@@ -6,7 +6,8 @@ import * as crypto from "crypto";
 import { Transaction } from "./transaction";
 // import { Logger } from "../libs/logger";
 import { TransactionStatus } from "../libs/enum";
-import { makeRangeIterator, sha256 } from "../libs/utils";
+import { makeRangeIterator, OIWriteStream, sha256 } from "../libs/utils";
+
 export class AccountSchema extends TimeStamps {
 	@Prop({ required: true, unique:true, uppercase:true })
 	walletId!: string;
@@ -14,7 +15,7 @@ export class AccountSchema extends TimeStamps {
     username!: string;
 	@Prop({ required: false,get:(val:string)=>val, set: AccountSchema.encryptPassword})
     password!: string;
-    @Prop({ required: false,default:null})
+    @Prop({ required: false, type:String, default:null})
     apiKey!: string|null;
     @Prop({ required: false,default:""})
     apiSecret!: string;
@@ -41,7 +42,9 @@ export class AccountSchema extends TimeStamps {
         return new Promise((resolve)=>{
             return Transaction.count({
                 sender: this.walletId,
-            }).then(async (count)=>{
+            }).then( (totalCount)=>{
+                const limit = 1000;
+                const count = Math.ceil(totalCount/limit);
                 const it = makeRangeIterator(0,count);
                 const mirror=(debit = 0)=>{
                     const next = it.next();
@@ -50,7 +53,7 @@ export class AccountSchema extends TimeStamps {
                     }
                     Transaction.find({
                         sender: this.walletId,
-                    }).select("amount").skip(next.value).limit(0).then((debits)=>{
+                    }).select("amount").skip(next.value).limit(1).then((debits)=>{
                         setImmediate(mirror,debit + debits.reduce((a,b)=>(a+b.amount),0));
                     });
                 }
@@ -60,12 +63,15 @@ export class AccountSchema extends TimeStamps {
                
         }) 
     }
+   
     get amount_received(): Promise<number>{
         return new Promise((resolve)=>{
             return Transaction.count({
                 recipient: this.walletId,
                 status: TransactionStatus.COMPLETED
-            }).then(async (count)=>{
+            }).then((totalCount)=>{
+                const limit = 1000;
+                const count = Math.ceil(totalCount/limit);
                 const it = makeRangeIterator(0,count);
                 const mirror=(credit = 0)=>{
                     const next = it.next();
@@ -75,13 +81,81 @@ export class AccountSchema extends TimeStamps {
                     Transaction.find({
                         recipient: this.walletId,
                         status: TransactionStatus.COMPLETED
-                    }).select("amount").skip(next.value).limit(0).then((credits)=>{
+                    }).select("amount").skip(next.value).limit(limit).then((credits)=>{
                         setImmediate(mirror,credit + credits.reduce((a,b)=>(a+b.amount),0));
                     }); 
                 }
                 setImmediate(mirror,0);
             });
         }) 
+    }
+    get transactionsCount():Promise<number>{
+        return Transaction.count({
+            $or:[{
+                recipient: this.walletId,
+            },{
+                sender: this.walletId,
+            }]
+        }).then((count)=>count);
+    }
+    transactionsJson(io: OIWriteStream, page:number, limit:number):void{
+        Transaction.find({
+            $or:[{
+                recipient: this.walletId,
+            },{
+                sender: this.walletId,
+            }]
+        }).limit(limit).skip((page-1)*limit).then((transactions)=>{
+            const it = makeRangeIterator(0, transactions.length);
+            io.write("[");
+            const mirror=()=>{
+                const next = it.next();
+                if(next.done){
+                   return io.end("]");
+                }
+                io.write(JSON.stringify(io.processor(transactions[next.value])));
+                if(next.value>0){
+                    io.write(",\n");
+                }
+                setImmediate(mirror);
+            }        
+            setImmediate(mirror);
+        });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transactionsJsonChunk(io: OIWriteStream):void{
+        Transaction.count({
+            $or:[{
+                recipient: this.walletId,
+            },{
+                sender: this.walletId,
+            }]
+        }).then( (totalCount)=>{
+            const limit = 1000;
+            const count = Math.ceil(totalCount/limit);
+            const it = makeRangeIterator(0,count);
+            io.write("[");
+            const mirror=()=>{
+                const next = it.next();
+                if(next.done){
+                   return io.end("]");
+                }
+                Transaction.find({
+                    $or:[{
+                        recipient: this.walletId,
+                    },{
+                        sender: this.walletId,
+                    }]
+                }).skip(next.value).limit(limit).then((transactions)=>{
+                    io.write(transactions.map((transaction)=>JSON.stringify(io.processor(transaction))).join(",\n"));
+                    if(next.value>0){
+                        io.write(",\n");
+                    }
+                    setImmediate(mirror);
+                });
+            }
+            setImmediate(mirror);
+        });
     }
     static encryptPassword(val:string):string{
         return bcrypt.hashSync(val,10);

@@ -19,7 +19,7 @@ class BlockChain{
     amount!:number;
 }
 export class ChainSchema extends TimeStamps {
-	@Prop({ default:null})
+	@Prop({ default:null, type:String})
 	previousHash!: string|null;
 	@Prop({ required: false,_id:false})
     block!: BlockChain;

@@ -40,5 +40,4 @@ export default class LedgerController{
         res.header("x-pagination-totalitems",String(count))
         return res.json(chain);
     }
-   
 }

@@ -137,3 +137,41 @@ export const  makeRangeIterator=(start = 0, end = Infinity, step = 1):{
     };
     return rangeIterator;
 }
+
+export class OIWriteStream{
+    protected _on:Record<"write"|"end"|"processor", (chunk?:string|Buffer|number)=>void>={
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        write(chunk?:string|Buffer|number):void{
+            console.log(chunk);
+        },
+        end(chunk?:string|Buffer|number):void{
+            console.log(chunk);
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        processor(chunk?:any):any{
+           return chunk;
+        },
+    };
+    write(chunk?:string|Buffer|number):void{
+        this._on.write(chunk);
+    }
+    end(chunk?:string|Buffer|number):void{
+        this._on.end(chunk);
+    }
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+    processor(data:any):any{
+        return this._on.processor(data);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    on( event: "data"|"end"|"processor", cl: (chunk?:string|Buffer|number|any) => void | any ):void{
+        if(event==="data"){
+            this._on.write = cl;
+        }
+        if(event==="end"){
+            this._on.end = cl;
+        }
+        if(event==="processor"){
+            this._on.processor = cl;
+        }
+    }
+}

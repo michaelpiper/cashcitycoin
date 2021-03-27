@@ -9,8 +9,8 @@ import { basicAuthObject, getApiKeySecret } from "../libs/auth";
 import apiKeyAuth from "api-key-auth";
 const router = express.Router();
 router.use("/account", accountRouter);
-router.use("/transaction",expressBasicAuth( basicAuthObject ), transactionRouter);
-router.use("/mining",expressBasicAuth( basicAuthObject ), miningRouter);
+router.use("/transaction", expressBasicAuth( basicAuthObject ), transactionRouter);
+router.use("/mining", expressBasicAuth( basicAuthObject ), miningRouter);
 router.use("/ledger", ledgerRouter);
 router.use("/cooperator", apiKeyAuth({ getSecret:getApiKeySecret, requestLifetime:60*60*24 }),  cooperatorRouter);
 

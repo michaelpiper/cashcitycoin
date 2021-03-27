@@ -88,7 +88,5 @@ export default class CooperatorController{
         return res.json({
             message: "Mining request completed",
         });
-
-
     }
 }

@@ -12,13 +12,13 @@ export class TransactionSchema extends TimeStamps {
 	recipient!: string;
 	@Prop({ required: true })
     amount!: number;
-    @Prop({ required: false, default:"", uppercase:true})
+    @Prop({ required: false,type: String, default:"", uppercase:true})
     narration = "";
     @Prop({ required: false, default:TransactionStatus.PENDING, enum:TransactionStatus })
     status?:TransactionStatus = TransactionStatus.PENDING;
-    @Prop({ required: false,default:TransactionSchema.genNonce })
+    @Prop({ required: false, type:String, default:TransactionSchema.genNonce })
     nonce?:string|null = null;
-    proof?:string|null = null
+    proof?:string|null = null;
     static getNonce():string{
         let string ="";
         for (let i =0;i<2;i++){

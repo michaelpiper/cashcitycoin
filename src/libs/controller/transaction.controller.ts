@@ -2,10 +2,11 @@ import { DocumentType } from "@typegoose/typegoose";
 import { Request, Response } from "express";
 import { IBasicAuthedRequest } from "express-basic-auth";
 import { ObjectId } from "mongodb";
-import { Transaction } from "../../models/transaction";
+import { Transaction, TransactionDocType } from "../../models/transaction";
 // import { Logger } from "../../libs/logger";
 import { Account, AccountSchema } from "../../models/account";
 import { isValidObjectId } from "mongoose";
+import { getPageFromReq, getLimitFromReq, OIWriteStream } from "../../libs/utils";
 export default class TransactionController{
     static async transfer(req:Request,res:Response):Promise<unknown>{
         if(!req.body.recipient){
@@ -63,8 +64,32 @@ export default class TransactionController{
     static async transactions(req:Request,res:Response):Promise<unknown>{
         const auth  = (req as IBasicAuthedRequest).auth;
         const sender = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
-        const transactions =  await Transaction.find({$or:[{sender:sender.walletId},{recipient:sender.walletId}]});
-        return res.json(transactions);
+        const page = getPageFromReq(req);
+        const limit = getLimitFromReq(req);
+        const count = 100;
+        res.header("content-type", "appliation/json");
+        res.header("x-pagination-totalpage", String(Math.round(count/limit)));
+        res.header("x-pagination-currentpage", String(page));
+        res.header("x-pagination-totalitems", String(count));
+        const io = new OIWriteStream();
+        io.on("data", (chunk)=>{
+            res.write(chunk);
+        });
+        io.on("end", (chunk)=>{
+            res.end(chunk);
+        });
+        io.on("processor", (transaction: TransactionDocType):Record<string,string|number|Date>=>{
+            return {
+                id: transaction._id,
+                sender: transaction.sender,
+                recipient: transaction.recipient,
+                amount: transaction.amount,
+                narration: transaction.narration,
+                createdAt: transaction.createdAt as Date,
+                updatedAt: transaction.updatedAt as Date,
+            }
+        });
+        return sender.transactionsJson(io,page,limit);
     }
     static async transaction(req:Request,res:Response):Promise<unknown>{
         if(!isValidObjectId(req.params.id))  return res.status(422).json({message:"invalid transaction id"});
