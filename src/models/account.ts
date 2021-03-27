@@ -6,7 +6,7 @@ import * as crypto from "crypto";
 import { Transaction } from "./transaction";
 // import { Logger } from "../libs/logger";
 import { TransactionStatus } from "../libs/enum";
-import { sha256 } from "../libs/utils";
+import { makeRangeIterator, sha256 } from "../libs/utils";
 export class AccountSchema extends TimeStamps {
 	@Prop({ required: true, unique:true, uppercase:true })
 	walletId!: string;
@@ -31,37 +31,56 @@ export class AccountSchema extends TimeStamps {
     }
     get balance (): Promise<number>{
         return new Promise((resolve)=>{
-            Transaction.find({
-                sender: this.walletId,
-            }).select("amount").then((debits)=>{
-                return Transaction.find({
-                    recipient: this.walletId,
-                    status: TransactionStatus.COMPLETED
-                }).select("amount").then((credits)=>{
-                    const debitBalance = debits.reduce((a,b)=>(a+b.amount),0);
-                    const creditBalance = credits.reduce((a,b)=>(a+b.amount),0);
-                    return  creditBalance-debitBalance;
-                });
+            Promise.all([this.amount_received, this.amount_sent]).then((result)=>{
+                    const [creditBalance, debitBalance] = result;
+                    return  creditBalance - debitBalance;
             }).then(resolve);    
         }) 
     }
     get amount_sent(): Promise<number>{
         return new Promise((resolve)=>{
-            Transaction.find({
+            return Transaction.count({
                 sender: this.walletId,
-            }).then((debits)=>{ 
-                return debits.reduce((a,b)=>(a+b.amount),0);
-            }).then(resolve);    
+            }).then(async (count)=>{
+                const it = makeRangeIterator(0,count);
+                const mirror=(debit = 0)=>{
+                    const next = it.next();
+                    if(next.done){
+                        return resolve(debit);
+                    }
+                    Transaction.find({
+                        sender: this.walletId,
+                    }).select("amount").skip(next.value).limit(0).then((debits)=>{
+                        setImmediate(mirror,debit + debits.reduce((a,b)=>(a+b.amount),0));
+                    });
+                }
+                setImmediate(mirror,0);
+            })
+           
+               
         }) 
     }
     get amount_received(): Promise<number>{
         return new Promise((resolve)=>{
-           Transaction.find({
-                    recipient: this.walletId,
-                    status: TransactionStatus.COMPLETED
-                }).then((credits)=>{
-                    return credits.reduce((a,b)=>(a+b.amount),0);
-                }).then(resolve);    
+            return Transaction.count({
+                recipient: this.walletId,
+                status: TransactionStatus.COMPLETED
+            }).then(async (count)=>{
+                const it = makeRangeIterator(0,count);
+                const mirror=(credit = 0)=>{
+                    const next = it.next();
+                    if(next.done){
+                        return resolve(credit);
+                    }
+                    Transaction.find({
+                        recipient: this.walletId,
+                        status: TransactionStatus.COMPLETED
+                    }).select("amount").skip(next.value).limit(0).then((credits)=>{
+                        setImmediate(mirror,credit + credits.reduce((a,b)=>(a+b.amount),0));
+                    }); 
+                }
+                setImmediate(mirror,0);
+            });
         }) 
     }
     static encryptPassword(val:string):string{

@@ -18,7 +18,7 @@ class Sdk {
     constructor (baseUrl="", user={}){
         this.baseUrl = baseUrl;
         this.user = user;
-        this.auth = Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+        this.auth = Buffer.from(`${this.user.username}:${this.user.password}`).toString("base64")
     }
     async getNonce (){
         return await axios.get(this.baseUrl+"/mining/nonce",{
@@ -60,7 +60,7 @@ class Sdk {
                             },
                             {
                                 headers:{
-                                    "Authorization":"Basic "+Buffer.from(`${this.user.wallet_id}:${this.user.password}`).toString("base64")
+                                    "Authorization":"Basic "+this.auth
                                 }
                         })
                         return resolve(res);
@@ -96,7 +96,7 @@ class Sdk {
 let submitted =false;
 const config = findConfig();
 const SDK = new Sdk(config.WALLET_URL,{
-    wallet_id: config.WALLET_ID,
+    username: config.WALLET_USER,
     password: config.WALLET_PASS
 });
 const main = async ()=>{

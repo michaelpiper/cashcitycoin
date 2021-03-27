@@ -29,7 +29,7 @@ export default class TransactionController{
             });  
         }
         const auth  = (req as IBasicAuthedRequest).auth;
-        const sender = await Account.findOne({walletId:auth.user}) as DocumentType<AccountSchema>; 
+        const sender = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
         const recipient = await Account.findOne({walletId:req.body.recipient}); 
         const balance = await sender.balance;
        
@@ -62,15 +62,17 @@ export default class TransactionController{
     }
     static async transactions(req:Request,res:Response):Promise<unknown>{
         const auth  = (req as IBasicAuthedRequest).auth;
-        const transactions =  await Transaction.find({$or:[{sender:auth.user},{recipient:auth.user}]});
+        const sender = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
+        const transactions =  await Transaction.find({$or:[{sender:sender.walletId},{recipient:sender.walletId}]});
         return res.json(transactions);
     }
     static async transaction(req:Request,res:Response):Promise<unknown>{
         if(!isValidObjectId(req.params.id))  return res.status(422).json({message:"invalid transaction id"});
         const auth  = (req as IBasicAuthedRequest).auth;
+        const sender = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
         const transaction =  await Transaction.findOne({
             _id: new ObjectId(req.params.id),
-            $or:[{sender:auth.user},{recipient:auth.user}]
+            $or:[{sender:sender.walletId},{recipient:sender.walletId}]
         });
         if(transaction==null){
             return res.status(404).json(transaction); 

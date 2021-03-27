@@ -36,7 +36,7 @@ export default class MiningController{
             return res.status(400).json({message:"transaction verifying"});
         }
         const auth  = (req as IBasicAuthedRequest).auth;
-        const wallet = await Account.findOne({walletId:auth.user}) as DocumentType<AccountSchema>; 
+        const wallet = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
         const transaction = await Transaction.findById(req.body.transaction.id);
         if(transaction===null){
             return res.status(404).json({message:"transaction not found"});

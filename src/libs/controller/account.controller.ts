@@ -31,17 +31,19 @@ export default class AccountController{
     }
     static async account(req:Request,res:Response):Promise<unknown>{
         const auth  = (req as IBasicAuthedRequest).auth;
-        const wallet = await Account.findOne({walletId:auth.user}) as DocumentType<AccountSchema>; 
-        return res.json({
-            wallet_id: auth.user,
-            balance: await wallet.balance,
+        const wallet = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
+        const payload = {
+            wallet_id: wallet.walletId,
+            balance: 0,
             amount_sent: await wallet.amount_sent,
             amount_received: await wallet.amount_received,
-        });
+        }
+        payload.balance = payload.amount_received-payload.amount_sent;
+        return res.json(payload);
     }
     static async balance(req:Request,res:Response):Promise<unknown>{
         const auth  = (req as IBasicAuthedRequest).auth;
-        const wallet = await Account.findOne({walletId:auth.user}) as DocumentType<AccountSchema>; 
+        const wallet = await Account.findOne({username:auth.user}) as DocumentType<AccountSchema>; 
         return res.json( await wallet.balance);
     }
 }
