@@ -3,7 +3,7 @@ import { Mining } from "../../models/mining";
 import * as yup from "yup";
 import { AccountDocType, findAccountByWalletId } from "../../models/account";
 import { MiningStatus } from "../../libs/enum";
-import { cooporatorReward } from "../../libs/utils";
+import { cooporatorReward, md5 } from "../../libs/utils";
 export default class CooperatorController{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
     static getNonceValidator = (body:Record<string, any>)=>{
@@ -78,7 +78,7 @@ export default class CooperatorController{
         if(mining.status===MiningStatus.FAILED){
             return res.status(400).json({message:"Minner request failed contact support"});
         }
-        if(mining.nonce !== data.nonce){
+        if(mining.nonce !== md5(data.nonce)){
             await mining.setFailed();
             return res.status(400).json({message:"Nonce key invalid"});
         }

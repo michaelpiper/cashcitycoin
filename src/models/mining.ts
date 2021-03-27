@@ -3,9 +3,10 @@ import { MongooseAdapter } from "../libs/connections";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 import { MiningStatus } from "../libs/enum";
 import { ObjectId } from "mongodb";
+import { md5 } from "../libs/utils";
 
 export class MiningSchema extends TimeStamps {
-	@Prop({required: true})
+	@Prop({required: true, get:(val:string)=>val, set:md5})
 	nonce!: string;
     @Prop({required: true})
 	requestId!: string;

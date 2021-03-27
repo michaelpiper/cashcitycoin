@@ -4,6 +4,7 @@ import { AccountDocType } from "../models/account";
 import { MiningDocType } from "../models/mining";
 import * as crypto from "crypto";
 export const sha256 = (value:string): string => crypto.createHash("sha256").update(value).digest("hex");
+export const md5 = (value:string): string => crypto.createHash("md5").update(value).digest("hex");
 export const cooporatorReward=async (mining: MiningDocType):Promise<Record<string,TransactionDocType>>=>{
     let cbonus, sbonus, transaction;
     const cooperatorBonusAmount = cooperatorBonus(mining.amount);
