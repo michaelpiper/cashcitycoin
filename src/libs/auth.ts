@@ -1,11 +1,10 @@
 import { DocumentType } from "@typegoose/typegoose";
 import { IAsyncAuthorizerOptions } from "express-basic-auth";
-
-type cbFunction = (err:string|null,result?:boolean)=>unknown;
+type cbFunction = (err:Error|null,result?:boolean)=>unknown;
 import {  Account, AccountSchema, findAccountByApiKey } from "../models/account";
 import { sha256 } from "./utils";
 export const authorizer=async (username:string,password:string,cb:cbFunction):Promise<unknown>=>{
-    const wallet = await Account.findOne({walletId:username});
+    const wallet = await Account.findOne({username});
     if(wallet===null){
         return cb(null);
     }

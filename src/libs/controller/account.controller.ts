@@ -17,12 +17,16 @@ export default class AccountController{
         });
     }
     static async generate(req:Request,res:Response):Promise<unknown>{
-        const wallet_id = AccountSchema.generateId();
-        const password = AccountSchema.generatePass();
-        await AccountSchema.generate(wallet_id,password)
+        const wallet_id = Account.generateId();
+        const password = Account.generatePass();
+        const username = Account.generateId("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",9);
+        await Account.generate(wallet_id, username, password)
         return res.json({
+            
             wallet_id,
+            username,
             password
+
         });
     }
     static async account(req:Request,res:Response):Promise<unknown>{

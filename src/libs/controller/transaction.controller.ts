@@ -1,10 +1,11 @@
 import { DocumentType } from "@typegoose/typegoose";
-import {Request,Response } from "express";
+import { Request, Response } from "express";
 import { IBasicAuthedRequest } from "express-basic-auth";
-import {ObjectId} from "mongodb";
+import { ObjectId } from "mongodb";
 import { Transaction } from "../../models/transaction";
 // import { Logger } from "../../libs/logger";
 import { Account, AccountSchema } from "../../models/account";
+import { isValidObjectId } from "mongoose";
 export default class TransactionController{
     static async transfer(req:Request,res:Response):Promise<unknown>{
         if(!req.body.recipient){
@@ -65,6 +66,7 @@ export default class TransactionController{
         return res.json(transactions);
     }
     static async transaction(req:Request,res:Response):Promise<unknown>{
+        if(!isValidObjectId(req.params.id))  return res.status(422).json({message:"invalid transaction id"});
         const auth  = (req as IBasicAuthedRequest).auth;
         const transaction =  await Transaction.findOne({
             _id: new ObjectId(req.params.id),

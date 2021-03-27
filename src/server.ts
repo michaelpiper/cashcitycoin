@@ -24,7 +24,7 @@ app.use(async (req,res,next)=>{
 })
 app.use(routes);
 app.use((req,res)=>{
-    res.status(400).json({message:`${req.url} NOT FOUND`})
+    res.status(404).json({message:`${req.url} NOT FOUND`})
 })
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 app.use( (err:any, req:Request, res:Response, next: express.NextFunction) =>{

@@ -6,10 +6,12 @@ import * as crypto from "crypto";
 import { Transaction } from "./transaction";
 // import { Logger } from "../libs/logger";
 import { TransactionStatus } from "../libs/enum";
+import { sha256 } from "../libs/utils";
 export class AccountSchema extends TimeStamps {
-	@Prop({ required: true,unique:true, uppercase:true })
+	@Prop({ required: true, unique:true, uppercase:true })
 	walletId!: string;
-
+    @Prop({ required: true, unique:true, get:(val:string)=>val, set:sha256 })
+    username!: string;
 	@Prop({ required: false,get:(val:string)=>val, set: AccountSchema.encryptPassword})
     password!: string;
     @Prop({ required: false,default:null})
@@ -31,11 +33,11 @@ export class AccountSchema extends TimeStamps {
         return new Promise((resolve)=>{
             Transaction.find({
                 sender: this.walletId,
-            }).then((debits)=>{
+            }).select("amount").then((debits)=>{
                 return Transaction.find({
                     recipient: this.walletId,
                     status: TransactionStatus.COMPLETED
-                }).then((credits)=>{
+                }).select("amount").then((credits)=>{
                     const debitBalance = debits.reduce((a,b)=>(a+b.amount),0);
                     const creditBalance = credits.reduce((a,b)=>(a+b.amount),0);
                     return  creditBalance-debitBalance;
@@ -72,6 +74,7 @@ export class AccountSchema extends TimeStamps {
         const numbers = "0123456789";
         const specialCharacters ="#$%&@";
         string.push(...alphabets.split(""));
+        string.push(...alphabets.toLowerCase().split(""));
         string.push(...numbers.split(""));
         string.push(...specialCharacters.split(""));
         for(let i =0; i <32;i++){
@@ -79,22 +82,23 @@ export class AccountSchema extends TimeStamps {
         }
         return result;
     }
-    static generateId():string{
+    static generateId(chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", subfix=4):string{
         let result ="";
-        const alphabets:string[] =("ABCDEFGHIJKLMNOPQRSTUVWXYZ").split("");
+        const alphabets:string[] =chars.split("");
         const ids:string[] =Date.now().toString().split(""); 
         for(const id of ids){
             result+=alphabets[Number(id)];
         }
-        for(let i =0; i <4;i++){
+        for(let i =0; i <subfix;i++){
             result+=alphabets[Math.floor(Math.random()*alphabets.length)];
         }
         return result;
     }
-    static async generate(walletId:string,password:string):Promise<AccountDocType>{
+    static async generate(walletId:string, username:string, password:string):Promise<AccountDocType>{
         return await Account.create({
             password,
             walletId,
+            username,
             apiKey: null,
             apiSecret: "",
             cooperator:false
