@@ -3,7 +3,7 @@ import { Mining } from "../../models/mining";
 import * as yup from "yup";
 import { AccountDocType, findAccountByWalletId } from "../../models/account";
 import { MiningStatus } from "../../libs/enum";
-import { cooporatorReward, md5 } from "../../libs/utils";
+import { cooporatorReward } from "../../libs/utils";
 export default class CooperatorController{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
     static getNonceValidator = (body:Record<string, any>)=>{
@@ -45,7 +45,7 @@ export default class CooperatorController{
         const nonce = Mining.getNonce();
         const mining = await Mining.create({
             requestId: data.requestId,
-            nonce: credentials.generateHash(nonce) as string,
+            nonce: nonce,
             cooperator: credentials.id,
             amount: data.amount,
             consumer: data.consumer,
@@ -60,7 +60,7 @@ export default class CooperatorController{
     }
     static async mining(req:Request,res:Response):Promise<unknown>{
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // const credentials: AccountDocType  = (req as any).credentials || {};
+        const credentials: AccountDocType  = (req as any).credentials || {};
         let data;
         try{
             data = await CooperatorController.getMiningValidator(req.body);
@@ -78,7 +78,7 @@ export default class CooperatorController{
         if(mining.status===MiningStatus.FAILED){
             return res.status(400).json({message:"Minner request failed contact support"});
         }
-        if(mining.nonce !== md5(data.nonce)){
+        if(mining.nonce !== credentials.generateHash(data.nonce)){
             await mining.setFailed();
             return res.status(400).json({message:"Nonce key invalid"});
         }
