@@ -5,6 +5,15 @@ import { TransactionStatus } from "../libs/enum";
 import * as crypto from "crypto";
 import { Logger } from "../libs/logger";
 import { addTransactionToChain } from "./chain";
+import { md5 } from "../libs/utils";
+
+const getProof = ():string=>{
+    let string ="";
+    for (let i =0;i<2;i++){
+        string+= Math.floor(Math.random()*9);
+    }
+    return string;
+}
 export class TransactionSchema extends TimeStamps {
 	@Prop({ required: true, uppercase:true })
 	sender!: string;
@@ -16,30 +25,25 @@ export class TransactionSchema extends TimeStamps {
     narration = "";
     @Prop({ required: false, default:TransactionStatus.PENDING, enum:TransactionStatus })
     status?:TransactionStatus = TransactionStatus.PENDING;
-    @Prop({ required: false, type:String, default:TransactionSchema.genNonce })
+    @Prop({ required: false, type:String,default:getProof, set: md5, get:(v:string):string=>v})
     nonce?:string|null = null;
-    proof?:string|null = null;
-    static getNonce():string{
-        let string ="";
-        for (let i =0;i<2;i++){
-            string+= Math.floor(Math.random()*9);
-        }
-        return string;
+    genNonce(previousHash:string|null):string{
+        return crypto.createHash("sha256").update( JSON.stringify({
+            previous_hash: previousHash,
+            proof:this.nonce,
+            block: {
+                sender: this.sender,
+                recipient: this.recipient,
+                amount: this.amount
+            },
+        })).digest("hex");
     }
-    static genNonce():string{
-        return TransactionSchema.getHash( TransactionSchema.getNonce());
-    }
-    static getHash(val:string):string{
-        return crypto.createHash("md5").update(val).digest("hex")
-    }
-    async verifyNonce(nonce: string):Promise<boolean>{
-        const hashNonce = TransactionSchema.getHash(nonce);
+    async verifyNonce(nonce: string, previousHash:string|null):Promise<boolean>{
         if(this.nonce===null|| this.nonce===undefined) return false;
-        if(this.nonce!==hashNonce){
+        if(this.nonce+previousHash!==nonce){
             await this.setPending();
             return false;
         }
-        this.proof = nonce;
         await this.setCompleted();
         return true;
     }

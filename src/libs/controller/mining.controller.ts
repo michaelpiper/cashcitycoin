@@ -17,9 +17,6 @@ export default class MiningController{
         }
         return res.json(chain.hash);
     }
-    static async nonce(req:Request,res:Response):Promise<unknown>{
-        return res.json(Transaction.getNonce());
-    }
     static async verifyTransaction(req:Request,res:Response):Promise<unknown>{
        const _transaction = req.body.transaction;
        if(!req.body.nonce){
@@ -63,7 +60,7 @@ export default class MiningController{
                 return res.status(400).json({message:"transaction verify failed"});
             }
             Logger.info(`transaction nonce ${req.body.nonce}=>${transaction.nonce}`);
-            if(!await transaction.verifyNonce(req.body.nonce)){
+            if(!await transaction.verifyNonce(req.body.nonce+req.body.previous_hash,chain===null? null: chain.hash)){
                 return res.status(400).json({message:"transaction not verified"});
             }
             if(transaction.sender!=="SYSTEM"){
@@ -87,7 +84,8 @@ export default class MiningController{
         if(transactions.length===0 ){
             return res.status(404).json({message:"no pending transaction"});
         }
-        return res.json(transactions.map((transaction)=>({id:transaction._id,sender:transaction.sender,recipient:transaction.recipient,amount:transaction.amount})));
+        const chain = await lastChain();
+        return res.json(transactions.map((transaction)=>({id:transaction._id,sender:transaction.sender,recipient:transaction.recipient,amount:transaction.amount,hash:transaction.genNonce(chain===null? null: chain.hash)})));
     }
     static async getPendingTransaction(req:Request,res:Response):Promise<unknown>{
         if(await verifyingTransaction()!==null){
@@ -97,6 +95,7 @@ export default class MiningController{
         if(transaction===null){
             return res.status(404).json({message:"no pending transaction"});
         }
-        return res.json({id:transaction._id,sender:transaction.sender,recipient:transaction.recipient,amount:transaction.amount});
+        const chain = await lastChain();
+        return res.json({id:transaction._id,sender:transaction.sender,recipient:transaction.recipient,amount:transaction.amount,hash:transaction.genNonce(chain===null? null: chain.hash)});
     }
 }

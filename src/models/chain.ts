@@ -5,19 +5,8 @@ import * as crypto from "crypto";
 import { TransactionSchema } from "./transaction";
 import { TransactionStatus } from "../libs/enum";
 import { ObjectId } from "mongodb";
-class BlockChain{
-    constructor(sender:string, recipient:string, amount:number){
-        this.sender = sender;
-        this.recipient = recipient;
-        this.amount =  amount;
-    }
-    @Prop({ required: true})
-    sender!:string;
-    @Prop({ required: true})
-    recipient!:string;
-    @Prop({ required: true})
-    amount!:number;
-}
+import { BlockChain } from "./block-chain";
+
 export class ChainSchema extends TimeStamps {
 	@Prop({ default:null, type:String})
 	previousHash!: string|null;

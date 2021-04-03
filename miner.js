@@ -1,4 +1,5 @@
 const axios = require('axios').default;
+const crypto = require("crypto");
 const findConfig=()=>{
     try{
         if(process.argv.find((argv)=>argv==="--dev")){
@@ -19,13 +20,6 @@ class Sdk {
         this.baseUrl = baseUrl;
         this.user = user;
         this.auth = Buffer.from(`${this.user.username}:${this.user.password}`).toString("base64")
-    }
-    async getNonce (){
-        return await axios.get(this.baseUrl+"/mining/nonce",{
-            headers:{
-                "Authorization":"Basic "+this.auth
-            }
-        }).catch((res)=>console.log(res.response?res.toJSON():res.message));
     }
     async getPreviousHash(){
         return await axios.get(this.baseUrl+"/mining/previous_hash",{
@@ -49,36 +43,60 @@ class Sdk {
     verifyPendingTransaction(transaction){
         return new Promise((resolve)=>{
             (async()=>{
-                while(true){
-                    const nonce = await this.getNonce();
-                    const previous_hash = await this.getPreviousHash();
-                    try{
-                        const res = await axios.post(this.baseUrl+"/mining",{
-                                transaction,
-                                nonce: nonce.data,
-                                previous_hash:previous_hash.data
-                            },
-                            {
-                                headers:{
-                                    "Authorization":"Basic "+this.auth
-                                }
-                        })
-                        return resolve(res);
+                let proof = 99;
+                let foundProof=null;
+                const previous_hash = await this.getPreviousHash();
+                while(proof>=0){  
+                    const p=crypto.createHash("md5").update(proof<10?"0"+String(proof):String(proof)).digest("hex");
+                    // console.log(p,'=>',proof<10?"0"+String(proof):String(proof));
+                    const hash = crypto.createHash("sha256").update( JSON.stringify({
+                        previous_hash: previous_hash.data,
+                        proof:p,
+                        block: {
+                            sender: transaction.sender,
+                            recipient: transaction.recipient,
+                            amount: transaction.amount
+                        },
+                    })).digest("hex");
+                    // console.log(hash,"=>",transaction.hash);
+                    if(hash === transaction.hash){
+                        foundProof = p;
+                        console.log("proof founded","=>",foundProof);
+                        break;
                     }
-                    catch(res){
-                        console.log(
-                        res.response?`
-                        verifyPendingTransaction
-                        nonce:         ${nonce.data},
-                        previous_hash: ${previous_hash.data},
-                        transaction:   ${JSON.stringify(transaction)},
-                        status:        ${res.response.status},
-                        statusText:    ${res.response.statusText},
-                        data:          ${JSON.stringify(res.response.data||null)}
-                        `:res.message)
-                        if(res.response && res.response.status===404){
-                            return resolve();
-                        }
+                    proof--;
+                }
+                if(foundProof===null){
+                    console.log("Proof not found");
+                    return resolve(res);
+                }
+                try{
+                    const res = await axios.post(this.baseUrl+"/mining",{
+                            transaction,
+                            nonce: foundProof,
+                            previous_hash: previous_hash.data
+                        },
+                        {
+                            headers:{
+                                "Authorization":"Basic "+this.auth
+                            }
+                    })
+                    console.log(res.data);
+                    return resolve(res);
+                }
+                catch(res){
+                    console.log(
+                    res.response?`
+                    verifyPendingTransaction
+                    nonce:         ${foundProof} => ${proof},
+                    previous_hash: ${previous_hash.data},
+                    transaction:   ${JSON.stringify(transaction)},
+                    status:        ${res.response.status},
+                    statusText:    ${res.response.statusText},
+                    data:          ${JSON.stringify(res.response.data||null)}
+                    `:res.message)
+                    if(res.response && res.response.status===404){
+                        return resolve();
                     }
                 }
             })()
