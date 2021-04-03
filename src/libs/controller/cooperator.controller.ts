@@ -78,7 +78,7 @@ export default class CooperatorController{
         if(mining.status===MiningStatus.FAILED){
             return res.status(400).json({message:"Minner request failed contact support"});
         }
-        if(mining.nonce !== credentials.generateHash(data.nonce)){
+        if(credentials.generateHash(mining.nonce) !== data.nonce){
             await mining.setFailed();
             return res.status(400).json({message:"Nonce key invalid"});
         }
