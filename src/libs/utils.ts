@@ -59,7 +59,7 @@ export const transactionMiningBonus = (amount:number):number=>{
     return (amount/100)*0.1;
 }
 export const cooperatorBonus = (amount:number):number=>{
-    return(amount/100)*1;
+    return (amount/100)*1;
 }
 export const sourceBonus = (amount:number):number=>{
     return (amount/100)*4;
