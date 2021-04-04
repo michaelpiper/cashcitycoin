@@ -56,40 +56,13 @@ export const miningReward=async (miner:AccountDocType,transaction:TransactionDoc
     return bonus;
 }
 export const transactionMiningBonus = (amount:number):number=>{
-    if(amount>4000000){
-        return (amount/100)*0.5;
-    }
-    if(amount>4000000){
-        return 40.5;
-    }
-    if(amount>3000000){
-        return 30.5;
-    }
-    if(amount>2000000){
-        return 20.5;
-    }
-    if(amount>200000){
-        return 2.5;
-    }
-    if(amount>20000){
-        return 1.5;
-    }
-    if(amount>2000){
-        return 1.2;
-    }
-    if(amount>100){
-        return 1;
-    }
-    return (amount/100)*1;
+    return (amount/100)*0.1;
 }
 export const cooperatorBonus = (amount:number):number=>{
-    const bAmount=(amount/100)*1;
-   
-    return bAmount;
+    return(amount/100)*1;
 }
 export const sourceBonus = (amount:number):number=>{
-    const bAmount=(amount/100)*4;
-    return bAmount;
+    return (amount/100)*4;
 }
 export const getPageFromReq=(req:Request):number=>{
     let page;
