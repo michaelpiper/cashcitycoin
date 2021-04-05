@@ -40,53 +40,40 @@ export class AccountSchema extends TimeStamps {
     }
     get amount_sent(): Promise<number>{
         return new Promise((resolve)=>{
-            return Transaction.count({
-                sender: this.walletId,
-            }).then( (totalCount)=>{
-                const limit = 1000;
-                const count = Math.ceil(totalCount/limit);
-                const it = makeRangeIterator(0,count);
-                const mirror=(debit = 0)=>{
-                    const next = it.next();
-                    if(next.done){
-                        return resolve(debit);
-                    }
-                    Transaction.find({
-                        sender: this.walletId,
-                    }).select("amount").skip(next.value).limit(1).then((debits)=>{
-                        setImmediate(mirror,debit + debits.reduce((a,b)=>(a+b.amount),0));
-                    });
-                }
-                setImmediate(mirror,0);
-            })
-           
-               
+            return Transaction.aggregate([
+                    {'$match': {
+                        sender: {'$eq': this.walletId},
+                    }},
+                    {'$group': {
+                        '_id': '$sender',
+                        'total': {'$sum': '$amount'},
+            
+                    }},
+                    {'$project': {'_id': 0, 'total': 1}}
+                ]).then((totals)=>totals.reduce((a,b)=>(a+b.total),0))
+                .then(resolve)
         }) 
     }
    
     get amount_received(): Promise<number>{
         return new Promise((resolve)=>{
-            return Transaction.count({
-                recipient: this.walletId,
-                status: TransactionStatus.COMPLETED
-            }).then((totalCount)=>{
-                const limit = 1000;
-                const count = Math.ceil(totalCount/limit);
-                const it = makeRangeIterator(0,count);
-                const mirror=(credit = 0)=>{
-                    const next = it.next();
-                    if(next.done){
-                        return resolve(credit);
-                    }
-                    Transaction.find({
-                        recipient: this.walletId,
-                        status: TransactionStatus.COMPLETED
-                    }).select("amount").skip(next.value).limit(limit).then((credits)=>{
-                        setImmediate(mirror,credit + credits.reduce((a,b)=>(a+b.amount),0));
-                    }); 
-                }
-                setImmediate(mirror,0);
-            });
+            return  Transaction.aggregate([
+                        {'$match': {
+
+                            recipient: {'$eq': this.walletId},
+                            'status': {
+                                '$in': [ TransactionStatus.COMPLETED]
+                            }
+                        }},
+                        {'$group': {
+                            '_id': '$recipient',
+                            'total': {'$sum': '$amount'},
+                
+                        }},
+                        {'$project': {'_id': 0, 'total': 1}}
+                    ]).then((totals)=>totals.reduce((a,b)=>(a+b.total),0))
+                    .then(resolve)
+                   
         }) 
     }
     get transactionsCount():Promise<number>{
